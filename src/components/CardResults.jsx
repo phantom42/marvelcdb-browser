@@ -29,7 +29,7 @@ export default function CardResults(){
 			}
 		}
 		loadCards();
-	},[])
+	},[]) //only runs once
 
 	// reset visibleCount when aspects change
 	useEffect(() => {
@@ -37,6 +37,7 @@ export default function CardResults(){
 	}, [selectedAspects]);
 	
 	// filter cards based on selected aspects/factions
+	// useMemo for caching the filtering
 	const filteredCards = useMemo(() => {
 		if (selectedAspects.length === 0) return [];
 		return allCards.filter(card => 
