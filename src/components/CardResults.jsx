@@ -1,4 +1,5 @@
 import { useAspects } from "../context/AspectContext";
+import { useCardTypes } from "../context/CardTypeContext";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Card from "./Card";
 
@@ -11,6 +12,7 @@ export default function CardResults(){
 	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
 	const { selectedAspects } = useAspects();
+	const { selectedCardTypes} = useCardTypes();
 	const observerRef = useRef(null) ; // mutable dom object in memory - updates do NOT trigger rerender
 
 	// load all cards
@@ -40,10 +42,29 @@ export default function CardResults(){
 	// useMemo for caching the filtering
 	const filteredCards = useMemo(() => {
 		if (selectedAspects.length === 0) return [];
-		return allCards.filter(card => 
-			selectedAspects.includes(card.faction_code)
-		);
-	}, [allCards,selectedAspects]);
+		return [...allCards]
+		.filter(card => selectedCardTypes.includes(card.type_name)) 
+			.filter(card => selectedAspects.includes(card.faction_code))
+			.sort((a,b) => {
+				if (a.type_code !== b.type_code) {
+					return a.type_code.localeCompare(b.type_code);
+				}
+
+				const costA = Number.isInteger(a.cost) ? a.cost : Infinity;
+				const costB = Number.isInteger(b.cost) ? b.cost : Infinity;
+
+				if ( costA !== costB) {
+					return costA - costB
+				}
+
+				return a.name.localeCompare(b.name);
+				/*
+				if (a.faction_code !== b.faction_code) {
+					return a.faction_code.localeCompare(b.faction_code);
+				}*/
+
+			});
+	}, [allCards,selectedAspects,selectedCardTypes]);
 	
 	// limit number of cards displayed 
 	const visibleCards = filteredCards.slice(0, visibleCount);
