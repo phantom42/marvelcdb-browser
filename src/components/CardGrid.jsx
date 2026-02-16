@@ -55,6 +55,9 @@ export default function CardGrid(){
 			.filter(card => matches(selectedCardTypes,card.type_code))
 			.filter(card => matches(selectedAspects, card.faction_code))
 			.filter(card => matches(selectedPacks, card.pack_code))
+			.filter((card, index, self) => 
+				index === self.findIndex(c => c.name === card.name)
+			)
 			.sort((a,b) => {
 				if (a.type_code !== b.type_code) {
 					return a.type_code.localeCompare(b.type_code);
