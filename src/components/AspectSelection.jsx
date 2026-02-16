@@ -40,8 +40,7 @@ export default function AspectSelection() {
 
 	const allAspectCodes = aspects.map(f => f.code);
 	return (
-		<section>
-			<h3>Select Aspects</h3>
+		<section className="filter-section bg-gray-700">
 			<button onClick={(() => selectAll(allAspectCodes))}>
 				Select All
 			</button>

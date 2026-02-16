@@ -1,9 +1,14 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const CardTypeContext = createContext(null);
 
 export function CardTypeProvider({children}) {
-	const [selectedCardTypes, setSelectedCardTypes] = useState([]);
+	const [selectedCardTypes, setSelectedCardTypes] = useState(() => {
+		const local = localStorage.getItem('mccb-selectedCardTypes');
+		return local 
+			? JSON.parse(local)
+			: []
+	});
 
 	function toggleCardType(code) {
 		setSelectedCardTypes(prev => 
@@ -20,6 +25,9 @@ export function CardTypeProvider({children}) {
 	function clearAll() {
 		setSelectedCardTypes([]);
 	}
+	useEffect(()=> {
+		localStorage.setItem('mccb-selectedCardTypes', JSON.stringify(selectedCardTypes));
+	},[selectedCardTypes])
 
 	return(
 		<CardTypeContext.Provider

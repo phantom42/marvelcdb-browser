@@ -1,9 +1,14 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AspectContext = createContext(null);
 
 export function AspectProvider({ children }) {
-	const [selectedAspects, setSelectedAspects] = useState([]);
+	const [selectedAspects, setSelectedAspects] = useState(() => {
+		const local = localStorage.getItem('mccb-selectedAspects');
+		return local
+			? JSON.parse(local)
+			: []
+	});
 
 	function toggleAspect(code) {
 		setSelectedAspects(prev => 
@@ -27,6 +32,9 @@ export function AspectProvider({ children }) {
 		setSelectedAspects([]);
 	}
 
+	useEffect(() => {
+		localStorage.setItem('mccb-selectedAspects', JSON.stringify(selectedAspects));
+	}, [selectedAspects])
 	return (
 		<AspectContext.Provider
 			value={{ selectedAspects, toggleAspect, selectAll, clearAll}}

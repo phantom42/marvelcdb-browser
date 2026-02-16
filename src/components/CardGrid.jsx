@@ -1,11 +1,12 @@
 import { useAspects } from "../context/AspectContext";
 import { useCardTypes } from "../context/CardTypeContext";
+import { usePacks } from "../context/PackContext";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Card from "./Card";
 
 const PAGE_SIZE = Number(import.meta.env.VITE_NUMBER_IMAGES_TO_LOAD);
 
-export default function CardResults(){
+export default function CardGrid(){
 	const [allCards, setAllCards] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
@@ -13,6 +14,7 @@ export default function CardResults(){
 
 	const { selectedAspects } = useAspects();
 	const { selectedCardTypes} = useCardTypes();
+	const { selectedPacks } = usePacks();
 	const observerRef = useRef(null) ; // mutable dom object in memory - updates do NOT trigger rerender
 
 	// load all cards
@@ -40,11 +42,19 @@ export default function CardResults(){
 	
 	// filter cards based on selected aspects/factions
 	// useMemo for caching the filtering
+	
+	const matches =(selected, value) => {
+		const doesMatch = selected.length === 0 || selected.includes(value)
+		console.log(doesMatch)
+		return doesMatch;
+	}
 	const filteredCards = useMemo(() => {
-		if (selectedAspects.length === 0) return [];
+		if (selectedAspects.length === 0 && selectedCardTypes.length === 0 && selectedPacks.length === 0) return [];
+		
 		return [...allCards]
-		.filter(card => selectedCardTypes.includes(card.type_name)) 
-			.filter(card => selectedAspects.includes(card.faction_code))
+			.filter(card => matches(selectedCardTypes,card.type_code))
+			.filter(card => matches(selectedAspects, card.faction_code))
+			.filter(card => matches(selectedPacks, card.pack_code))
 			.sort((a,b) => {
 				if (a.type_code !== b.type_code) {
 					return a.type_code.localeCompare(b.type_code);
@@ -58,13 +68,8 @@ export default function CardResults(){
 				}
 
 				return a.name.localeCompare(b.name);
-				/*
-				if (a.faction_code !== b.faction_code) {
-					return a.faction_code.localeCompare(b.faction_code);
-				}*/
-
 			});
-	}, [allCards,selectedAspects,selectedCardTypes]);
+	}, [allCards,selectedAspects,selectedCardTypes,selectedPacks]);
 	
 	// limit number of cards displayed 
 	const visibleCards = filteredCards.slice(0, visibleCount);
@@ -96,10 +101,9 @@ export default function CardResults(){
 	} 
 	return (
 		<div>
-			<h3>Filtered Cards</h3>
-			<div className="card-grid">
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6">
 				{visibleCards.map(card => (
-					<Card card={card} key={card.code}/>
+					<Card card={card} key={card.code} allCards={allCards}/>
 				))}
 			</div>
 			{/* Sentinel for infinite scroll*/}
