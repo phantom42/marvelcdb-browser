@@ -3,6 +3,7 @@ export default function Card({card, allCards}){
 	let altText = card.name;
 	if (card.cost !== null && card.cost >= 0) {
 		altText = `${card.name}
+${card.faction_name} - ${card.type_name}
 ${altText} - ${card.cost}
 ${card.pack_name}`;
 	}

@@ -17,24 +17,7 @@ export default function CardGrid(){
 	const { selectedPacks } = usePacks();
 	const observerRef = useRef(null) ; // mutable dom object in memory - updates do NOT trigger rerender
 
-	// load all cards
-	useEffect(() => {
-		async function loadCards() {
-			try {
-				const apiEndpoint = import.meta.env.VITE_API_ENDPOINT ;
-				const url = apiEndpoint + 'cards/';
-				const res = await fetch(url);
-				const data = await res.json();
-				setAllCards(data);
-			} catch (err) {
-				setError(err.message);
-			} finally {
-				setLoading(false);
-			}
-		}
-		loadCards();
-	},[]) //only runs once
-
+	
 	// reset visibleCount when aspects change
 	useEffect(() => {
 		setVisibleCount(PAGE_SIZE);
