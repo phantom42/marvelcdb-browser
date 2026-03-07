@@ -1,4 +1,8 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import 'flowbite-react/plugin/tailwindcss';
+@source '../.flowbite-react/class-list.json';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -37,9 +41,9 @@ h1 {
 }
 
 #app {
-  max-width: 1280px;
+  /* max-width: 1280px; */
   margin: 0 auto;
-  padding: 2rem;
+  /* padding: 2rem; */
   text-align: center;
 }
 
@@ -75,8 +79,15 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+button:disabled {
+  color: grey;
+  cursor: not-allowed;
+}
 button:hover {
-  border-color: #646cff;
+  border-color: #ffffff;
+}
+button:hover:disabled {
+  border-color: transparent;
 }
 button:focus,
 button:focus-visible {
@@ -96,15 +107,33 @@ button:focus-visible {
   }
 }
 .missing-card {
-	max-width: 300px;
+  max-width: 300px;
 }
-.filter-section{
-	text-align: left;
+.filter-section {
+  text-align: left;
 }
 .filter-section > ul {
-	text-align: left;
+  text-align: left;
 }
 .filter-section > ul > li > label > input[type='checkbox'] {
-	margin-right: .5em;
-	margin-left: .5em;
+  margin-right: 0.5em;
+  margin-left: 0.5em;
+}
+.sidebar {
+  width: 33vw;
+  padding: 20px;
+}
+.main {
+  flex-grow: 1;
+  padding: 20px;
+}
+.container {
+  display: flex;
+  height: 100vh;
+}
+.main-body {
+  max-width: 1280px;
+  margin: 0 auto;
+  /* padding: 2rem; */
+  text-align: center;
 }

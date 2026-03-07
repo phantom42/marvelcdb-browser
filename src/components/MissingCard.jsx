@@ -11,7 +11,6 @@ const BorderColors = {
 
 } 
 export default function MissingCard({card}) {
-	console.log(card);
 
 	const costText = `<span> {card.cost !== undefined ? Cost - ${card.cost} : ''} </span>`;
 	// const statsText = `{card.attack !== undefined? }`
