@@ -15,10 +15,8 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.60.0",
     "@clerk/react-router": "^2.4.3",
-    "@react-router/dev": "^7.13.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.14",
-    "flowbite-react": "^0.12.17",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-icons": "^5.5.0",

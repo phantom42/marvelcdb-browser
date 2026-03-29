@@ -14,7 +14,7 @@ export default function DeckBuilder(){
 	const [openFilter,setOpenFilter] = useState('');
 	const [openView, setOpenView] = useState('browse');
 	const [selectedCard, setSelectedCard] = useState();
-	const {loadOwnedPacks, setOwnedPacks, filters, deck, dispatch, actions, allHeroes, allCards, deckHero,deckStats} = useCards();
+	const {loadOwnedPacks, setOwnedPacks, filters, deck, dispatch, actions, allHeroes, allCards, deckHero,deckStats, useUniversalPrebuiltDeck} = useCards();
 	function switchOpenFilter (which){
 		if (which !== openFilter) {
 			setOpenFilter(which);
@@ -68,7 +68,7 @@ export default function DeckBuilder(){
 					isOpen={true}/>
 			</View>
 			<View isOpen={openView==='filters'}>
-
+			
 			
           	  <Filters openFilter={openFilter} handleOpenFilter={switchOpenFilter}/>
 			</View>
@@ -78,6 +78,9 @@ export default function DeckBuilder(){
 				{ deck.cards && deck.cards.length > 0 && 
 					<button onClick={()=>dispatch({type: actions.RESET_DECK, payload:[]}) }>Reset Deck</button>
 				}
+				{deck.hero && deck.hero.length > 0 && 
+					<button onClick={()=>useUniversalPrebuiltDeck(deck.hero)}>Use Universal Prebuilt</button>
+				}
 				<Deck selectedCard={selectedCard} clickHandler={selectCard}/>
 
 			</View>
@@ -85,6 +88,9 @@ export default function DeckBuilder(){
 
 
 		<View isOpen={openView==='browse'}>
+		{deck.hero && deck.hero.length > 0 && 
+				<button onClick={()=>useUniversalPrebuiltDeck(deck.hero)}>Use Universal Prebuilt</button>
+			}
 			 <FilteredCards />
 			</View>
 

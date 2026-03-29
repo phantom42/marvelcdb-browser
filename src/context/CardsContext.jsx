@@ -1,177 +1,15 @@
 
-import { useReducer, useMemo, useContext, createContext, useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
+import { useReducer, useMemo, useContext, createContext, useEffect, useState, useRef } from "react";
+import { cardsReducer, ACTIONS } from "../reducers/cardsReducer";
+import { getKeyValues, initialState } from "../utils/cardUtils";
+import { loadCards, fetchDeck } from "../services/cardsApi";
+import { getCardCounts, getCollectionCounts, convertMCDBDeck } from "../utils/deckUtils";
+import { HERO_DECK_IDS } from "../data/heroDeckIds";
 
 const CardsContext = createContext(null);
 
-const ACTIONS = {
-	TOGGLE_FILTER: 'toggle-filter',
-	RESET_FILTERS: 'reset-filters',
-	STORE_OWNED_PACKS: 'store-owned-packs',
-	LOAD_OWNED_PACKS: 'load-owned-packs',
-	ADD_CARD_TO_DECK: 'add-card-to-deck',
-	REMOVE_CARD_FROM_DECK: 'remove-card-from-deck',
-	REMOVE_CARD_FROM_DECK_BY_ID: 'remove-card-from-deck-by-id',
-	REMOVE_CARD_FROM_DECK_BY_CODE: 'remove-card-from-deck-by-code',
-	LOAD_DECK: 'load-deck',
-	RESET_DECK: 'reset-deck',
-	SET_HERO: 'set-hero',
 
-	
-};
-
-const initialState = {
-	ownedPacks: [],
-	filters: {
-		aspects: [],
-		types: [],
-		packs: [],
-		hero: [],
-		sets: [],
-	},
-	deck: {
-		hero: '',
-		cards: [],
-	}
-}
-
-function cardsReducer(state, action) {
-	switch(action.type) {
-		case (ACTIONS.TOGGLE_FILTER): {
-			const {category, value} = action.payload;
-			const current = state.filters[category];
-
-			const updated = current.includes(value) 
-				? current.filter(v => v !== value)
-				: [...current, value];
-
-			return {
-				...state,
-				filters: {
-					...state.filters,
-					[category]: updated
-				}
-			}
-		}
-		case (ACTIONS.RESET_FILTERS): {
-			return {
-				...state, 
-				filters: initialState.filters
-			}
-		}
-		case (ACTIONS.STORE_OWNED_PACKS): {
-			return {
-				...state,
-				ownedPacks: action.payload,
-				filters: {
-					...state.filters,
-					packs: action.payload
-				}
-			}
-		}
-		case (ACTIONS.LOAD_OWNED_PACKS): {
-			return {
-				...state,
-				ownedPacks: action.payload,
-				filters: {
-					...state.filters,
-					packs: action.payload
-				}
-			}
-		}
-		case (ACTIONS.ADD_CARD_TO_DECK): {
-			const fixedCard = {...action.payload, deck_card_id: `${action.payload.code}-${crypto.randomUUID()}`}
-			return {
-				...state,
-				deck: {
-					...state.deck,
-					cards: [...state.deck.cards, 
-						fixedCard
-					]
-				}
-			}
-		}
-		case (ACTIONS.REMOVE_CARD_FROM_DECK_BY_ID):{
-			let removed = false;
-			const filtered = state.deck.cards.filter((card) => {
-				return card.deck_card_id !== action.payload.deck_card_id
-			});
-			return {
-				...state,
-				deck: {...state.deck,
-					cards: filtered
-				}
-			};
-		}
-		case (ACTIONS.REMOVE_CARD_FROM_DECK_BY_CODE): {
-			let removed = false;
-			const filtered = [];
-			state.deck.cards.map((card) => {
-				if (!removed && card.code == action.payload.code) {
-					removed = true;
-				} else {
-					filtered.push(card);
-				}
-			})
-			return {
-				...state,
-				deck: {...state.deck,
-					cards: filtered
-				}
-			}
-		}
-
-		case (ACTIONS.LOAD_DECK):{
-			return {
-				...state,
-				deck: action.payload
-			}
-		}
-		case (ACTIONS.RESET_DECK): {
-			return {
-				...state,
-				deck: initialState.deck
-			}
-		}
-		case (ACTIONS.SET_HERO): {
-			const hero_code = action.payload.hero;
-			const non_hero_cards = state.deck.cards.filter((card) => 
-				!card.card_set_type_name_code 
-					|| card.card_set_type_name_code !== 'hero'
-				)
-			const hero_cards = action.payload.allCards.filter((card) => 
-				card.card_set_type_name_code 
-					&& card.card_set_type_name_code === 'hero' 
-					&& card.card_set_code === hero_code
-				)
-			const full_hero_cards = [];
-			hero_cards.forEach( card => {
-				const quantity = card.quantity ?? 1;
-				for (let i = 0; i < quantity; i++) {
-					full_hero_cards.push({...card});
-				}
-			})
-			const fullDeck = [...non_hero_cards, ...full_hero_cards];
-			const decKWithIds = [];
-			fullDeck.forEach((card) => {
-				const id = card.deck_card_id || `${card.code}-${crypto.randomUUID()}`
-				decKWithIds.push({...card, deck_card_id: id})
-			})
-
-			const sortedDeck = sortDeck(decKWithIds);
-			return {
-				...state,
-				deck: {
-					...state.deck,
-					cards: sortedDeck,
-					hero: action.payload.hero
-				}
-			}
-		}
-
-		default: return state;
-	}
-}
 
 export function CardsProvider({children}) {
 	const [state, dispatch] = useReducer(cardsReducer, initialState, (init)=> {
@@ -199,12 +37,13 @@ export function CardsProvider({children}) {
 	
 	const rawHeroCards = useMemo(() => {
 		const filteredHeroes = allCards.filter((card,index)=> {
-			return (card.card_set_type_name_code === 'hero' && card.position ===1 && card.hidden === false && card.linked_to_code);
+			return (card.card_set_type_name_code === 'hero' &&  card.hidden === false && card.linked_to_code);
 		})
 		return filteredHeroes;
 	},[allCards])
 
-	const allHeroes = useMemo(() => getKeyValues('card_set_code', 'card_set_name', rawHeroCards), [rawHeroCards]).sort((a,b)=>{return a.card_set_name.localeCompare(b.card_set_name)});
+	const allHeroes = useMemo(() => getKeyValues('card_set_code', 'card_set_name', rawHeroCards), [rawHeroCards])
+		.sort((a,b)=>{return a.card_set_name.localeCompare(b.card_set_name)});
 	const deckHero = useMemo(() => {
 		if (state.deck.hero === '') return '';
 		const whichHero = allHeroes.filter(hero => {
@@ -219,31 +58,11 @@ export function CardsProvider({children}) {
 
 
 	useEffect(() => {
-		async function loadCards() {
-			const cachedData = getCachedCards();
-			if (cachedData) {
-				setAllCards(cachedData);
-				return ;
-			}
-			try {
-				const apiEndpoint = import.meta.env.VITE_API_ENDPOINT ;
-				const url = apiEndpoint + 'cards/';
-				const res = await fetch(url);
-				const data = await res.json();
-				setAllCards(data);
-				localStorage.setItem(
-					import.meta.env.VITE_CACHE_KEY,
-					JSON.stringify({data, timestamp: Date.now()
-
-					})
-				);
-			} catch (err) {
-				setError(err.message);
-			} finally {
-				setLoading(false);
-			}
+		async function callApi() {
+			const cardData = await loadCards();
+			setAllCards(cardData);
 		}
-		loadCards();
+		callApi();
 	},[]) //only runs once
 
 	useEffect(() => {
@@ -296,7 +115,7 @@ export function CardsProvider({children}) {
 		})
 	}, [allCards, state.filters])
 
-	const collectionCounts = useMemo(() => getCollectionCounts(state.deck.cards), [filteredCards]);
+	const collectionCounts = useMemo(() => getCollectionCounts(filteredCards), [filteredCards]);
 
 	const deckStats = useMemo(() => {
 		const stats = {
@@ -322,52 +141,27 @@ export function CardsProvider({children}) {
 		return stats;
 	}, [state.deck.cards]);
 
-	function getCardCounts(deck){
-		const counts = deck.reduce((acc, card) => {
-			acc[card.code] = (acc[card.code] || 0) + 1;
-			return acc;
-		}, {})
-		return counts;
-	}
+	// function getCardCounts(deck){
+	// 	const counts = deck.reduce((acc, card) => {
+	// 		acc[card.code] = (acc[card.code] || 0) + 1;
+	// 		return acc;
+	// 	}, {})
+	// 	return counts;
+	// }
 
-	function getCollectionCounts(deck){
-		const collectionCounts = {};
-		for (const card of filteredCards) {
-			const n = card.quantity || 1;
-			const c = card.name || 'missing name';
-			const existing = collectionCounts[c] || 0;
-			collectionCounts[c] = existing + n;
-		}
-		return collectionCounts;
-	}
+	// function getCollectionCounts(){
+	// 	const collectionCounts = {};
+	// 	for (const card of filteredCards) {
+	// 		const n = card.quantity || 1;
+	// 		const c = card.name || 'missing name';
+	// 		const existing = collectionCounts[c] || 0;
+	// 		collectionCounts[c] = existing + n;
+	// 	}
+	// 	return collectionCounts;
+	// }
 
-	function getCachedCards() {
-		const cached = localStorage.getItem(import.meta.env.VITE_CACHE_KEY);
-		if (!cached) return null;
-		const parsed = JSON.parse(cached);
-		const isExpired = Date.now() - parsed.timestamp > import.meta.env.VITE_CACHE_LIFETIME;
+	
 
-		return isExpired ? null : parsed.data;
-	}
-
-	function getKeyValues(key, value, dataSet) {
-		if (dataSet === undefined) {
-			return ;
-		}
-		const uniqueMap = new Map();
-		for (const card of dataSet) {
-			const code = card[`${key}`];
-			const name = card[`${value}`];
-			const pair = `${code}|${name}`
-			if (!uniqueMap.has(pair)) {
-				uniqueMap.set(pair, {
-					[key]: code,
-					[value]: name
-				});
-			}
-		}
-		return Array.from(uniqueMap.values());
-	}
 	useEffect(() => {
 		localStorage.setItem(import.meta.env.VITE_PERSISTENT_FILTERS, JSON.stringify(state.filters));
 	}, [state.filters])
@@ -451,9 +245,35 @@ export function CardsProvider({children}) {
 		})
 
 	}
+	function convertHeroCode(cardId) {
+		const heroCard = allCards.filter((card) => {
+			return card.code === cardId;
+		})
+		//console.log(heroCard);
+		//console.log(heroCard.length);
+		let found_hero = '';
+		if (heroCard.length) {
+			const card = heroCard[0];
+			found_hero = card.card_set_code;
+		}
+		//console.log(found_hero);
+		return found_hero;
+	}
+	async function useUniversalPrebuiltDeck(hero_code){
+		const deckId = HERO_DECK_IDS[hero_code].universal;
+		if (!deckId) return false;
+		const fetchedDeck = await fetchDeck(deckId);
+		const fetchedHero = await convertHeroCode(fetchedDeck.hero_code);
+		const convertedDeck = await convertMCDBDeck(fetchedHero, fetchedDeck, allCards, state.ownedPacks);
+		//console.log(convertedDeck);
+		dispatch({
+			type: ACTIONS.USE_UNIVERSAL_DECK,
+			payload: convertedDeck
+		})
+	}
 
 	
-
+	//console.log(allHeroes);
 	const exports = {
 		actions: ACTIONS,
 		allCards,
@@ -474,6 +294,7 @@ export function CardsProvider({children}) {
 		loadStoredDeck,
 		resetDeck,
 		addCardToDeck,
+		useUniversalPrebuiltDeck,
 		deck: state.deck,
 		collectionCounts,
 		ownedPacks: state.ownedPacks
@@ -491,25 +312,3 @@ export function useCards() {
 	}
 	return context ;
 }
-const compareString = (a, b) =>
-  (a ?? '').localeCompare(b ?? '');
-
-const compareNumber = (a, b) =>
-  (a ?? 0) - (b ?? 0);
-function sortDeck(unsorted){
-		const sorted = [...unsorted].sort((a,b) => {
-			const aHero = a.card_set_type_name_code === 'hero';
-			const bHero = b.card_set_type_name_code === 'hero';
-
-			if (aHero !== bHero) return aHero ? -1 : 1;
-
-			if (aHero) return compareNumber(a.position, b.position);
-
-			return (
-				compareString(a.faction_code, b.faction_code) ||
-				compareString(a.card_type_code, b.card_type_code) ||
-				compareNumber(a.cost, b.cost)
-			)
-		})
-		return sorted;
-	}
