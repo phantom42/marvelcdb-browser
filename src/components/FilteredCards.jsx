@@ -3,15 +3,32 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Card from "./Card";
 const PAGE_SIZE = Number(import.meta.env.VITE_NUMBER_IMAGES_TO_LOAD);
 export default function FilteredCards() {
-	const { filteredCards, allCards, dispatch, actions, addCardToDeck, cardCounts, deck, collectionCounts } = useCards();
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
+	const { filteredCards, allCards, dispatch, actions, addCardToDeck, cardCounts, deck, collectionCounts, ownedPacks } = useCards();
 	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 	const observerRef = useRef(null); // mutable dom object in memory - updates do NOT trigger rerender
 
 
-	// limit number of cards displayed 
-	const visibleCards = filteredCards.slice(0, visibleCount);
+	// deduplicate: collect all unique root codes from filteredCards (originals and reprints),
+	// then pick the owned version of each, falling back to the original print
+	const dedupedCards = useMemo(() => {
+		const rootCodes = [...new Set(
+			filteredCards.map(card => card.duplicate_of_code ?? card.code)
+		)];
+
+		return rootCodes.map(rootCode => {
+			const versions = allCards.filter(c =>
+				c.code === rootCode || c.duplicate_of_code === rootCode
+			);
+			if (ownedPacks.length === 0) {
+				return versions.find(c => c.code === rootCode) ?? versions[0];
+			}
+			const ownedVersion = versions.find(c => ownedPacks.includes(c.pack_code));
+			return ownedVersion ?? versions.find(c => c.code === rootCode) ?? versions[0];
+		}).filter(Boolean);
+	}, [filteredCards, allCards, ownedPacks]);
+
+	// limit number of cards displayed
+	const visibleCards = dedupedCards.slice(0, visibleCount);
 
 	// infinite scroll observer
 	useEffect(() => {
@@ -20,7 +37,7 @@ export default function FilteredCards() {
 
 	useEffect(() => {
 		if (!observerRef.current) return; // no observer
-		if (visibleCount >= filteredCards.length) return; // everything already shown
+		if (visibleCount >= dedupedCards.length) return; // everything already shown
 
 		const observer = new IntersectionObserver(
 			entries => {
@@ -34,7 +51,7 @@ export default function FilteredCards() {
 		observer.observe(observerRef.current);
 
 		return () => observer.disconnect();
-	}, [visibleCount, filteredCards.length]);
+	}, [visibleCount, dedupedCards.length]);
 
 	// draw it all
 

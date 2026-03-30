@@ -24,9 +24,9 @@ export default function Card({card, allCards, clickHandler}){
 	${card.pack_name}`;
 		}
 	let displayImage;
-	if (card.imagesrc !== undefined && card.imagesrc.length) {
+	if (card.imagesrc != null && card.imagesrc.length) {
 		displayImage = card.imagesrc;
-	} else if ((card.imagesrc === undefined || card.imagesrc.length === 0) && (card.duplicate_of_code)) {		
+	} else if ((card.imagesrc == null || card.imagesrc.length === 0) && (card.duplicate_of_code)) {
 		displayImage = `/bundles/cards/${card.duplicate_of_code}.png`;
 	} else {
 		displayImage = findAlt(card.name, allCards);
