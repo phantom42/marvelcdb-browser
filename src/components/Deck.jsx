@@ -1,8 +1,12 @@
 import { useCards } from "../context/CardsContext";
 import Card from "./Card";
-export default function Deck({clickHandler}) {
+export default function Deck({clickHandler, findAltHandler}) {
 	const {dispatch, actions} = useCards();
 	const {deck, allCards, ownedPacks} = useCards();
+	function handleFindAlt(card)  {
+		findAltHandler(card);
+	}
+
 	
 	return (<div className="grid grid-cols-4 gap-5">
 		
@@ -14,12 +18,15 @@ export default function Deck({clickHandler}) {
 					<Card card={card} key={`${card.deck_card_id}`} allCards={allCards} clickHandler={clickHandler}/>
 				</div>
 				{unowned && (
-					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<span className="text-yellow-400 text-4xl">⚠️</span>
+					<div className="absolute inset-0 flex items-center justify-center">
+						<span className="text-yellow-400 text-4xl pointer-events-none">⚠️</span>						
 					</div>
 				)}
 			</div>
-				{card.card_set_type_name_code !== 'hero' &&
+				{unowned && 
+				<button className="" onClick={() => handleFindAlt(card)}>Find Alternative</button>
+				}
+				{card.card_set_type_name_code !== 'hero' && !unowned &&
 					<button onClick={()=>{dispatch({type:actions.REMOVE_CARD_FROM_DECK_BY_ID, payload:card})}} key={card.deck_card_id}>Remove Card</button>
 				}
 			</div>)

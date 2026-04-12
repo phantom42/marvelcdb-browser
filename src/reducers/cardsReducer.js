@@ -12,7 +12,8 @@ export const ACTIONS = {
 	LOAD_DECK: 'load-deck',
 	RESET_DECK: 'reset-deck',
 	SET_HERO: 'set-hero',
-	USE_UNIVERSAL_DECK: 'use-universal-deck'
+	USE_UNIVERSAL_DECK: 'use-universal-deck',
+	FIND_ALT: 'find-alt'
 
 	
 };
@@ -157,6 +158,16 @@ export function cardsReducer(state, action) {
 				deck: {
 					hero: action.payload.hero,
 					cards: sortedDeck
+				}
+			}
+		}
+		case (ACTIONS.FIND_ALT): {
+			return {
+				...state,
+				filters: {
+					...state.filters,
+					aspects: [action.payload.faction_code],
+					types: [action.payload.type_code]
 				}
 			}
 		}

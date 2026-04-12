@@ -16,6 +16,7 @@ export default function DeckBuilder(){
 	const [selectedCard, setSelectedCard] = useState();
 	const {loadOwnedPacks, setOwnedPacks, filters, deck, dispatch, actions, allHeroes, allCards, deckHero,deckStats, useUniversalPrebuiltDeck} = useCards();
 	function switchOpenFilter (which){
+		console.log('switching', which);
 		if (which !== openFilter) {
 			setOpenFilter(which);
 		}
@@ -29,6 +30,11 @@ export default function DeckBuilder(){
 	}
 	function selectCard(which) {
 		setSelectedCard(which);
+	}
+	function findAlternative(card) {
+		dispatch({type: actions.FIND_ALT, payload: card});
+		switchView('browse');
+		
 	}
 
 	
@@ -81,7 +87,7 @@ export default function DeckBuilder(){
 				{deck.hero && deck.hero.length > 0 && 
 					<button onClick={()=>useUniversalPrebuiltDeck(deck.hero)}>Use Universal Prebuilt</button>
 				}
-				<Deck selectedCard={selectedCard} clickHandler={selectCard}/>
+				<Deck selectedCard={selectedCard} clickHandler={selectCard} findAltHandler={findAlternative}/>
 
 			</View>
 
